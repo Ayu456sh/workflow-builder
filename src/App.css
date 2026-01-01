@@ -1,0 +1,367 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --node-width: 200px;
+  --node-bg: #ffffff;
+  --line-color: #cbd5e1;
+  --primary-color: #3b82f6;
+  --branch-color: #f59e0b;
+  --end-color: #ef4444;
+}
+
+body {
+  margin: 0;
+  background-color: #f8fafc;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden; /* Prevent body scroll, let canvas scroll */
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.header {
+  background: white;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  z-index: 10;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1e293b;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #0f172a;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1e293b;
+}
+
+/* Custom Scrollbar for Canvas - HIDDEN as requested for cleaner look */
+.canvas {
+  flex: 1;
+  overflow: auto;
+  padding: 4rem 2rem;
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 20px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.canvas::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Tree Structure --- */
+.children-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Ensure min-width allows centering without cutting off */
+  min-width: min-content; 
+  position: relative;
+}
+
+.node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Node Boxes - The "Box" Look */
+.node-card {
+  width: var(--node-width);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.node-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.node-header {
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white; /* White text for colored headers */
+}
+
+/* Colored Headers */
+.node-action .node-header, .node-start .node-header {
+  background-color: var(--primary-color);
+}
+
+.node-branch .node-header {
+  background-color: var(--branch-color);
+}
+
+.node-end .node-header {
+  background-color: var(--end-color);
+}
+
+.node-type-label {
+    color: inherit;
+    background: none;
+    text-transform: uppercase;
+}
+
+.node-label {
+  padding: 1rem;
+  text-align: center;
+  cursor: text;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.node-label:hover {
+  background: #f8fafc;
+}
+
+.edit-mode input {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  text-align: center;
+  font-family: inherit;
+  font-size: inherit;
+  outline: 2px solid var(--primary-color);
+}
+
+.btn-delete {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-delete:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+/* Connectors */
+
+/* Vertical line from parent to child */
+.vertical-line {
+  width: 2px;
+  height: 2rem;
+  background-color: var(--line-color);
+}
+
+/* Branch Container */
+.branch-container {
+  display: flex;
+  gap: 2rem;
+  justify-content: center; /* Center branches */
+  margin-top: 2rem;
+  position: relative;
+}
+
+/* Connecting lines for branches */
+.branch-container::before {
+  content: '';
+  position: absolute;
+  top: -2rem; /* Start at parent bottom */
+  left: 50%;
+  width: 2px;
+  height: 2rem;
+  background-color: var(--line-color);
+  transform: translateX(-50%); /* Precisely center */
+}
+
+.branch-path::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 2px;
+  background-color: var(--line-color);
+}
+
+.branch-true::after {
+  left: 50%;
+  width: calc(50% + 1rem); 
+}
+
+.branch-false::after {
+  right: 50%;
+  width: calc(50% + 1rem); 
+}
+
+/* Individual Branch Paths */
+.branch-path {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-width: var(--node-width); /* Ensure enough space */
+}
+
+/* Small vertical line from horizontal bar down to child */
+.branch-path::before {
+  content: '';
+  width: 2px;
+  height: 1rem;
+  background-color: var(--line-color);
+}
+
+.connector-label {
+  background: #f1f5f9;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: #64748b;
+  position: absolute;
+  top: -0.75rem;
+  z-index: 1;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  left: 50%; 
+  transform: translateX(-50%);
+}
+
+/* Context Menu & Add Button */
+.add-trigger {
+  position: absolute;
+  bottom: -12px; /* Halfway on the line */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+}
+
+.add-trigger-relative {
+  position: relative;
+  left: auto;
+  transform: none;
+  bottom: auto;
+  margin-top: 1rem;
+}
+
+.btn-add-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btn-add-circle:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: scale(1.1);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.context-menu-popover {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 140px;
+  z-index: 20;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-5px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.context-menu-item {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s;
+}
+
+.context-menu-item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.context-menu-item span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Indicators for menu types */
+.type-indicator-action { background: var(--primary-color); width: 8px; height: 8px; }
+.type-indicator-branch { background: var(--branch-color); width: 8px; height: 8px; }
+.type-indicator-end { background: var(--end-color); width: 8px; height: 8px; }
