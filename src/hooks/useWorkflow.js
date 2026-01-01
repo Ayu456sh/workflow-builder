@@ -10,9 +10,38 @@ const initialWorkflow = {
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const useWorkflow = () => {
-  const [workflow, setWorkflow] = useState(initialWorkflow);
+  // History is an array of workflow snapshots: [Version1, Version2, Version3]
+  const [history, setHistory] = useState([initialWorkflow]);
+  // Current Index tells us which version we are looking at
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // The "Current" workflow is just the one at the current index
+  const workflow = history[currentIndex];
 
   const cloneWorkflow = (data) => JSON.parse(JSON.stringify(data));
+
+  // Helper to save a new state to history
+  const pushState = (newWorkflow) => {
+    // 1. Cut off any "future" history if we were in the middle of undoing
+    const historySoFar = history.slice(0, currentIndex + 1);
+    // 2. Add the new version
+    const newHistory = [...historySoFar, newWorkflow];
+    // 3. Update state
+    setHistory(newHistory);
+    setCurrentIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const redo = () => {
+    if (currentIndex < history.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
 
   const addNode = useCallback((parentId, type, index = null) => {
     const newWorkflow = cloneWorkflow(workflow);
@@ -46,9 +75,10 @@ export const useWorkflow = () => {
       return false;
     };
 
-    findAndAdd(newWorkflow);
-    setWorkflow(newWorkflow);
-  }, [workflow]);
+    if (findAndAdd(newWorkflow)) {
+      pushState(newWorkflow);
+    }
+  }, [workflow, currentIndex, history]);
 
   const deleteNode = useCallback((nodeId) => {
     if (nodeId === 'root') return;
@@ -75,9 +105,10 @@ export const useWorkflow = () => {
       return false;
     };
 
-    findAndDelete(newWorkflow);
-    setWorkflow(newWorkflow);
-  }, [workflow]);
+    if (findAndDelete(newWorkflow)) {
+      pushState(newWorkflow);
+    }
+  }, [workflow, currentIndex, history]);
 
   const updateNodeLabel = useCallback((nodeId, newLabel) => {
     const newWorkflow = cloneWorkflow(workflow);
@@ -94,14 +125,19 @@ export const useWorkflow = () => {
       }
     };
 
-    findAndUpdate(newWorkflow);
-    setWorkflow(newWorkflow);
-  }, [workflow]);
+    if (findAndUpdate(newWorkflow)) {
+      pushState(newWorkflow);
+    }
+  }, [workflow, currentIndex, history]);
 
   return { 
     workflow, 
     addNode, 
     deleteNode, 
-    updateNodeLabel 
+    updateNodeLabel,
+    undo,
+    redo,
+    canUndo: currentIndex > 0,
+    canRedo: currentIndex < history.length - 1
   };
 };

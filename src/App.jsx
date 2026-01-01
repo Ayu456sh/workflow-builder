@@ -8,7 +8,11 @@ export default function App() {
     workflow, 
     addNode, 
     deleteNode, 
-    updateNodeLabel 
+    updateNodeLabel,
+    undo,
+    redo,
+    canUndo,
+    canRedo
   } = useWorkflow();
 
   const handleSave = () => {
@@ -21,6 +25,8 @@ export default function App() {
       <header className="header">
         <h1>Workflow Builder</h1>
         <div className="toolbar">
+          <button className="btn-secondary" onClick={undo} disabled={!canUndo}>Undo</button>
+          <button className="btn-secondary" onClick={redo} disabled={!canRedo}>Redo</button>
           <button className="btn-primary" onClick={handleSave}>
             Save Workflow
           </button>

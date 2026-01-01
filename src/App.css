@@ -62,6 +62,22 @@ button {
   background: #1e293b;
 }
 
+.btn-secondary {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Custom Scrollbar for Canvas - HIDDEN as requested for cleaner look */
 .canvas {
   flex: 1;
